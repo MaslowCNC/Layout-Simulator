@@ -161,7 +161,7 @@
             opacity = opacity + checkMinBeltLength(posI.x, posI.y, blI.x, blI.y);
             opacity = opacity + checkMinBeltLength(posI.x, posI.y, brI.x, brI.y);
 
-            //opacity = Math.max(opacity, computeTension(x, y, tl, tr, bl, br));
+            opacity = Math.max(opacity, computeTension(posI.x, posI.y, tlI, trI, blI, brI));
 
             return opacity;
         }
