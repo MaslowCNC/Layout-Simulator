@@ -18,13 +18,13 @@
         var tpBbox = { min: { x: Infinity, y: Infinity }, max: { x: -Infinity, y: -Infinity } };
         var bboxIsSet = false;
 
-        var tlX = -8.339;
-        var tlY = 2209;
-        var trX = 3505; 
-        var trY = 2209;
+        var tlX = 0;
+        var tlY = 2000;
+        var trX = 3000; 
+        var trY = 2000;
         var blX = 0;
         var blY = 0;
-        var brX = 3505;
+        var brX = 3000;
         var brY = 0;
 
         var scale = .25;
@@ -33,8 +33,14 @@
         var isPanning = false;
         var startX, startY;
 
+        //Shifts 0,0 to be the center of the canvas and scales the points for zooming
         function projection(point) {
             return { x: point.x * scale + canvas.width / 2 + panX, y: point.y * scale + canvas.height / 2 + panY };
+        }
+
+        //This is the inverse of projection, it shifts a point from the canvas to the original coordinate system
+        function inverseProjection(point) {
+            return { x: (point.x - canvas.width / 2 - panX) / scale, y: (point.y - canvas.height / 2 - panY) / scale };
         }
 
         function draw() {
@@ -69,7 +75,6 @@
         }
 
         var drawMachineBelts = function() {
-            console.log("Draw belts");
 
             const tl = projection({x: tlX - trX/2, y: tlY/2, z: 0});
             const tr = projection({x: trX/2, y: trY/2, z: 0});
@@ -81,15 +86,18 @@
             tpBbox.max.x = Math.max(tpBbox.max.x, tr.x);
             tpBbox.max.y = Math.max(tpBbox.max.y, tr.y);
 
+            //Find the center
+            let c = projection({x: 0, y: 0, z: 0});
+
             tp.beginPath();
             tp.strokeStyle = "grey";
-            tp.moveTo(0, 0);
+            tp.moveTo(c.x, c.y);
             tp.lineTo(tl.x, tl.y);
-            tp.moveTo(0, 0);
+            tp.moveTo(c.x, c.y);
             tp.lineTo(tr.x, tr.y);
-            tp.moveTo(0, 0);
+            tp.moveTo(c.x, c.y);
             tp.lineTo(bl.x, bl.y);
-            tp.moveTo(0, 0);
+            tp.moveTo(c.x, c.y);
             tp.lineTo(br.x, br.y);
             tp.stroke();
 
@@ -111,22 +119,26 @@
             tp.closePath();
             tp.fill();
 
-            const squareSize = projection({ x: 50, y: 0, z: 0 });
+            const squareSize = 50* scale;
 
-            // var i = bl.x;
-            // var j = bl.y;
-            // while (i < tr.x) {
-            //     while (j < tr.y) {
-            //         drawARect(i, j, squareSize.x, computPositonGradient(i, j, tl, tr, bl, br));
-            //         j = j + squareSize.x;
-            //     }
-            //     j = bl.y;
-            //     i = i + squareSize.x;
-            // }
+            //drawARect(tl.x, tl.y, squareSize, computePositionGradient(0, 0, tl, tr, bl, br));
+
+            var i = bl.x;
+            var j = bl.y;
+            while (i < tr.x) {
+                while (j < tr.y) {
+                    drawARect(i, j, squareSize, computePositionGradient(i, j, tl, tr, bl, br));
+                    j = j + squareSize;
+                }
+                j = bl.y;
+                i = i + squareSize;
+            }
         }
 
         var checkMinBeltLength = function(x1, y1, x2, y2) {
+
             const dist = Math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
+
             if (dist < 1200) {
                 return 1 - dist / 1200;
             } else {
@@ -134,41 +146,70 @@
             }
         }
 
-        var computPositonGradient = function(x, y, tl, tr, bl, br) {
+        var computePositionGradient = function(x, y, tl, tr, bl, br) {
             var opacity = 0;
 
-            opacity = opacity + checkMinBeltLength(x, y, tl.x, tl.y);
-            opacity = opacity + checkMinBeltLength(x, y, tr.x, tr.y);
-            opacity = opacity + checkMinBeltLength(x, y, bl.x, bl.y);
-            opacity = opacity + checkMinBeltLength(x, y, br.x, br.y);
+            let posI = inverseProjection({x: x, y: y});
+            let tlI = inverseProjection(tl);
+            let trI = inverseProjection(tr);
+            let blI = inverseProjection(bl);
+            let brI = inverseProjection(br);
 
-            opacity = Math.max(opacity, computeTension(x, y, tl, tr, bl, br));
+
+            opacity = opacity + checkMinBeltLength(posI.x, posI.y, tlI.x, tlI.y);
+            opacity = opacity + checkMinBeltLength(posI.x, posI.y, trI.x, trI.y);
+            opacity = opacity + checkMinBeltLength(posI.x, posI.y, blI.x, blI.y);
+            opacity = opacity + checkMinBeltLength(posI.x, posI.y, brI.x, brI.y);
+
+            //opacity = Math.max(opacity, computeTension(x, y, tl, tr, bl, br));
 
             return opacity;
         }
 
-        var computeTension = function(x, y, tl, tr, bl, br) {
-            const A = Math.atan((y - tl.y) / (tr.x - x));
-            const B = Math.atan((y - tl.y) / (x - tl.x));
+        var computeTension = function(x,y, tl, tr, bl, br){
+            const A = Math.atan((y-tl.y)/(tr.x - x));
+            const B = Math.atan((y-tl.y)/(x-tl.x));
 
             const T1 = 1 / (Math.cos(A) * Math.sin(B) / Math.cos(B) + Math.sin(A));
             const T2 = 1 / (Math.cos(B) * Math.sin(A) / Math.cos(A) + Math.sin(B));
 
-            const T1Scaled = T1 / -3;
-            const T2Scaled = T2 / -3;
+            const T1Scaled = T1/-3;
+            const T2Scaled = T2/-3; //This is some arbitrary scaling to make it look right in terms of color
 
             const max = Math.max(T1Scaled, T2Scaled);
 
-            if (max > .15) {
+            if(max > .15){
                 return max;
-            } else {
+            }
+            else{
                 return 0;
             }
         }
 
-        function drawARect(x, y, size, opacity) {
-            tp.fillStyle = `rgba(0, 0, 0, ${opacity})`;
-            tp.fillRect(x, y, size, size);
+        // License: MIT - https://opensource.org/licenses/MIT
+        // Author: Michele Locati <michele@locati.it>
+        // Source: https://gist.github.com/mlocati/7210513
+        var perc2color = function(perc) {
+            var r, g, b = 0;
+            if(perc < 50) {
+                r = 255;
+                g = Math.round(5.1 * perc);
+            }
+            else {
+                g = 255;
+                r = Math.round(510 - 5.10 * perc);
+            }
+            var h = r * 0x10000 + g * 0x100 + b * 0x1;
+
+            //onsole.log(r + " " + g + " " + b)
+            return "rgba("+r+", "+g+", "+b+", .3)";//'#' + ('000000' + h.toString(16)).slice(-6);
+        }
+
+        var drawARect = function(x, y, size, opacity) {
+            tp.beginPath();
+            tp.fillStyle = perc2color(100 - 100 * opacity);
+            tp.rect(x - size / 2, y - size / 2, size, size);
+            tp.fill();
         }
 
         canvas.addEventListener('mousedown', function(e) {
