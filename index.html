@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas Drawing</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="myCanvas" width="800" height="600"></canvas>
+    <script>
+        var canvas = document.getElementById('myCanvas');
+        var tp = canvas.getContext('2d');
+        var tpBbox = { min: { x: Infinity, y: Infinity }, max: { x: -Infinity, y: -Infinity } };
+        var bboxIsSet = false;
+
+        var tlX = -8.339;
+        var tlY = 2209;
+        var trX = 3505; 
+        var trY = 2209;
+        var blX = 0;
+        var blY = 0;
+        var brX = 3505;
+        var brY = 0;
+
+        function projection(point) {
+            // Simple projection function for demonstration
+            return { x: point.x + canvas.width / 2, y: point.y + canvas.height / 2 };
+        }
+
+        var drawMachineBounds = function() {
+            var woodWidth = 2438;
+            var woodHeight = 2438 / 2;
+
+            const p0 = projection({ x: -woodWidth / 2, y: -woodHeight / 2, z: 0 });
+            const p1 = projection({ x: woodWidth / 2, y: -woodHeight / 2, z: 0 });
+            const p2 = projection({ x: woodWidth / 2, y: woodHeight / 2, z: 0 });
+            const p3 = projection({ x: -woodWidth / 2, y: woodHeight / 2, z: 0 });
+
+            tpBbox.min.x = Math.min(tpBbox.min.x, p0.x);
+            tpBbox.min.y = Math.min(tpBbox.min.y, p0.y);
+            tpBbox.max.x = Math.max(tpBbox.max.x, p2.x);
+            tpBbox.max.y = Math.max(tpBbox.max.y, p2.y);
+            bboxIsSet = true;
+
+            tp.beginPath();
+            tp.moveTo(p0.x, p0.y);
+            tp.lineTo(p1.x, p1.y);
+            tp.lineTo(p2.x, p2.y);
+            tp.lineTo(p3.x, p3.y);
+            tp.lineTo(p0.x, p0.y);
+            tp.strokeStyle = "green";
+            tp.stroke();
+        }
+
+        var drawMachineBelts = function() {
+            console.log("Draw belts");
+
+            const tl = projection({x: tlX - trX/2, y: tlY/2, z: 0});
+            const tr = projection({x: trX/2, y: trY/2, z: 0});
+            const bl = projection({x: blX - brX/2, y: blY - tlY/2, z: 0});
+            const br = projection({x: brX/2, y: brY - trY/2, z: 0});
+
+            tpBbox.min.x = Math.min(tpBbox.min.x, bl.x);
+            tpBbox.min.y = Math.min(tpBbox.min.y, bl.y);
+            tpBbox.max.x = Math.max(tpBbox.max.x, tr.x);
+            tpBbox.max.y = Math.max(tpBbox.max.y, tr.y);
+
+            tp.beginPath();
+            tp.strokeStyle = "grey";
+            tp.moveTo(0, 0);
+            tp.lineTo(tl.x, tl.y);
+            tp.moveTo(0, 0);
+            tp.lineTo(tr.x, tr.y);
+            tp.moveTo(0, 0);
+            tp.lineTo(bl.x, bl.y);
+            tp.moveTo(0, 0);
+            tp.lineTo(br.x, br.y);
+            tp.stroke();
+
+            tp.fillStyle = "black";
+            tp.beginPath();
+            tp.arc(tl.x, tl.y, 10, 0, 2 * Math.PI);
+            tp.closePath();
+            tp.fill();
+            tp.beginPath();
+            tp.arc(tr.x, tr.y, 10, 0, 2 * Math.PI);
+            tp.closePath();
+            tp.fill();
+            tp.beginPath();
+            tp.arc(br.x, br.y, 10, 0, 2 * Math.PI);
+            tp.closePath();
+            tp.fill();
+            tp.beginPath();
+            tp.arc(bl.x, bl.y, 10, 0, 2 * Math.PI);
+            tp.closePath();
+            tp.fill();
+
+            const squareSize = projection({ x: 50, y: 0, z: 0 });
+
+            var i = bl.x;
+            var j = bl.y;
+            while (i < tr.x) {
+                while (j < tr.y) {
+                    drawARect(i, j, squareSize.x, computPositonGradient(i, j, tl, tr, bl, br));
+                    j = j + squareSize.x;
+                }
+                j = bl.y;
+                i = i + squareSize.x;
+            }
+        }
+
+        var checkMinBeltLength = function(x1, y1, x2, y2) {
+            const dist = Math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
+            if (dist < 1200) {
+                return 1 - dist / 1200;
+            } else {
+                return 0;
+            }
+        }
+
+        var computPositonGradient = function(x, y, tl, tr, bl, br) {
+            var opacity = 0;
+
+            opacity = opacity + checkMinBeltLength(x, y, tl.x, tl.y);
+            opacity = opacity + checkMinBeltLength(x, y, tr.x, tr.y);
+            opacity = opacity + checkMinBeltLength(x, y, bl.x, bl.y);
+            opacity = opacity + checkMinBeltLength(x, y, br.x, br.y);
+
+            opacity = Math.max(opacity, computeTension(x, y, tl, tr, bl, br));
+
+            return opacity;
+        }
+
+        var computeTension = function(x, y, tl, tr, bl, br) {
+            const A = Math.atan((y - tl.y) / (tr.x - x));
+            const B = Math.atan((y - tl.y) / (x - tl.x));
+
+            const T1 = 1 / (Math.cos(A) * Math.sin(B) / Math.cos(B) + Math.sin(A));
+            const T2 = 1 / (Math.cos(B) * Math.sin(A) / Math.cos(A) + Math.sin(B));
+
+            const T1Scaled = T1 / -3;
+            const T2Scaled = T2 / -3;
+
+            const max = Math.max(T1Scaled, T2Scaled);
+
+            if (max > .15) {
+                return max;
+            } else {
+                return 0;
+            }
+        }
+
+        function drawARect(x, y, size, opacity) {
+            tp.fillStyle = `rgba(0, 0, 0, ${opacity})`;
+            tp.fillRect(x, y, size, size);
+        }
+
+        drawMachineBounds();
+        drawMachineBelts();
+    </script>
+</body>
+</html>
