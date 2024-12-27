@@ -27,9 +27,20 @@
         var brX = 3505;
         var brY = 0;
 
+        var scale = 1;
+        var panX = 0;
+        var panY = 0;
+        var isPanning = false;
+        var startX, startY;
+
         function projection(point) {
-            // Simple projection function for demonstration
-            return { x: point.x + canvas.width / 2, y: point.y + canvas.height / 2 };
+            return { x: point.x * scale + canvas.width / 2 + panX, y: point.y * scale + canvas.height / 2 + panY };
+        }
+
+        function draw() {
+            tp.clearRect(0, 0, canvas.width, canvas.height);
+            drawMachineBounds();
+            drawMachineBelts();
         }
 
         var drawMachineBounds = function() {
@@ -102,16 +113,16 @@
 
             const squareSize = projection({ x: 50, y: 0, z: 0 });
 
-            var i = bl.x;
-            var j = bl.y;
-            while (i < tr.x) {
-                while (j < tr.y) {
-                    drawARect(i, j, squareSize.x, computPositonGradient(i, j, tl, tr, bl, br));
-                    j = j + squareSize.x;
-                }
-                j = bl.y;
-                i = i + squareSize.x;
-            }
+            // var i = bl.x;
+            // var j = bl.y;
+            // while (i < tr.x) {
+            //     while (j < tr.y) {
+            //         drawARect(i, j, squareSize.x, computPositonGradient(i, j, tl, tr, bl, br));
+            //         j = j + squareSize.x;
+            //     }
+            //     j = bl.y;
+            //     i = i + squareSize.x;
+            // }
         }
 
         var checkMinBeltLength = function(x1, y1, x2, y2) {
@@ -160,8 +171,33 @@
             tp.fillRect(x, y, size, size);
         }
 
-        drawMachineBounds();
-        drawMachineBelts();
+        canvas.addEventListener('mousedown', function(e) {
+            isPanning = true;
+            startX = e.clientX - panX;
+            startY = e.clientY - panY;
+        });
+
+        canvas.addEventListener('mousemove', function(e) {
+            if (isPanning) {
+                panX = e.clientX - startX;
+                panY = e.clientY - startY;
+                draw();
+            }
+        });
+
+        canvas.addEventListener('mouseup', function() {
+            isPanning = false;
+        });
+
+        canvas.addEventListener('wheel', function(e) {
+            e.preventDefault();
+            var scaleAmount = e.deltaY * -0.01;
+            scale += scaleAmount;
+            scale = Math.min(Math.max(.125, scale), 4);
+            draw();
+        });
+
+        draw();
     </script>
 </body>
 </html>
