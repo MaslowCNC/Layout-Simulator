@@ -35,12 +35,12 @@
 
         //Shifts 0,0 to be the center of the canvas and scales the points for zooming
         function projection(point) {
-            return { x: point.x * scale + canvas.width / 2 + panX, y: point.y * scale + canvas.height / 2 + panY };
+            return { x: point.x * scale + canvas.width / 2 + panX, y: -point.y * scale + canvas.height / 2 + panY };
         }
 
-        //This is the inverse of projection, it shifts a point from the canvas to the original coordinate system
+        // This is the inverse of projection, it shifts a point from the canvas to the original coordinate system
         function inverseProjection(point) {
-            return { x: (point.x - canvas.width / 2 - panX) / scale, y: (point.y - canvas.height / 2 - panY) / scale };
+            return { x: (point.x - canvas.width / 2 - panX) / scale, y: -(point.y - canvas.height / 2 - panY) / scale };
         }
 
         function draw() {
@@ -106,31 +106,31 @@
             tp.arc(tl.x, tl.y, 10, 0, 2 * Math.PI);
             tp.closePath();
             tp.fill();
-            tp.beginPath();
-            tp.arc(tr.x, tr.y, 10, 0, 2 * Math.PI);
-            tp.closePath();
-            tp.fill();
-            tp.beginPath();
-            tp.arc(br.x, br.y, 10, 0, 2 * Math.PI);
-            tp.closePath();
-            tp.fill();
-            tp.beginPath();
-            tp.arc(bl.x, bl.y, 10, 0, 2 * Math.PI);
-            tp.closePath();
-            tp.fill();
+            // tp.beginPath();
+            // tp.arc(tr.x, tr.y, 10, 0, 2 * Math.PI);
+            // tp.closePath();
+            // tp.fill();
+            // tp.beginPath();
+            // tp.arc(br.x, br.y, 10, 0, 2 * Math.PI);
+            // tp.closePath();
+            // tp.fill();
+            // tp.beginPath();
+            // tp.arc(bl.x, bl.y, 10, 0, 2 * Math.PI);
+            // tp.closePath();
+            // tp.fill();
 
             const squareSize = 50* scale;
 
             //drawARect(tl.x, tl.y, squareSize, computePositionGradient(0, 0, tl, tr, bl, br));
 
             var i = bl.x;
-            var j = bl.y;
-            while (i < tr.x) {
-                while (j < tr.y) {
-                    drawARect(i, j, squareSize, computePositionGradient(i, j, tl, tr, bl, br));
+            var j = -1*bl.y;
+            while (i <= tr.x) {
+                while (j <= -1*tr.y) {
+                    drawARect(i, -1*j, squareSize, computePositionGradient(i, j, tl, tr, bl, br));
                     j = j + squareSize;
                 }
-                j = bl.y;
+                j = -1*bl.y;
                 i = i + squareSize;
             }
         }
@@ -149,7 +149,7 @@
         var computePositionGradient = function(x, y, tl, tr, bl, br) {
             var opacity = 0;
 
-            let posI = inverseProjection({x: x, y: y});
+            let posI = inverseProjection({x: x, y: -1*y}); //This is where the calculation is being done
             let tlI = inverseProjection(tl);
             let trI = inverseProjection(tr);
             let blI = inverseProjection(bl);
@@ -206,9 +206,10 @@
         }
 
         var drawARect = function(x, y, size, opacity) {
+            console.log("Drawing a rect at X: " + x + " Y: " + y + " with opacity: " + opacity);
             tp.beginPath();
             tp.fillStyle = perc2color(100 - 100 * opacity);
-            tp.rect(x - size / 2, y - size / 2, size, size);
+            tp.rect(x - size / 2, y - size / 2, size, size); // Invert y-coordinate
             tp.fill();
         }
 
