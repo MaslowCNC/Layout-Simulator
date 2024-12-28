@@ -21,6 +21,14 @@
             display: block;
             margin-bottom: 10px;
         }
+            .checkbox-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .checkbox-container label {
+            margin-right: 10px;
+        }
     </style>
 </head>
 <body>
@@ -31,15 +39,18 @@
         <label for="widthInput">Width:</label>
         <input type="text" id="widthInput" value="3000" oninput="updateDimensions()">
         <label for="resolutionSlider">Resolution:</label>
-        <label for="beltAngleCheckbox">Belt Angle:</label>
-        <input type="checkbox" id="beltAngleCheckbox" checked onchange="updateBeltAngle(this.checked)">
-        <br>
-        <label for="armContactCheckbox">Arm Contact:</label>
-        <input type="checkbox" id="armContactCheckbox" checked onchange="updateArmContact(this.checked)">
-        <br>
-        <label for="beltTensionCheckbox">Belt Tension:</label>
-        <input type="checkbox" id="beltTensionCheckbox" checked onchange="updateBeltTension(this.checked)">
-        <br>
+        <div class="checkbox-container">
+            <label for="beltAngleCheckbox">Belt Angle:</label>
+            <input type="checkbox" id="beltAngleCheckbox" checked onchange="updateBeltAngle(this.checked)">
+        </div>
+        <div class="checkbox-container">
+            <label for="armContactCheckbox">Arm Contact:</label>
+            <input type="checkbox" id="armContactCheckbox" checked onchange="updateArmContact(this.checked)">
+        </div>
+        <div class="checkbox-container">
+            <label for="beltTensionCheckbox">Belt Tension:</label>
+            <input type="checkbox" id="beltTensionCheckbox" checked onchange="updateBeltTension(this.checked)">
+        </div>
 <input type="range" id="resolutionSlider" min="10" max="100" value="20" oninput="updateResolution(this.value)">
     </div>
     <script>
