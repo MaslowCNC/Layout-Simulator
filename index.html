@@ -77,6 +77,10 @@
             <label for="beltTensionCheckbox">Belt Tension:</label>
             <input type="checkbox" id="beltTensionCheckbox" checked onchange="updateBeltTension(this.checked)">
         </div>
+        <div class="checkbox-container">
+            <label for="beltLengthCheckbox">Belt Length:</label>
+            <input type="checkbox" id="beltLengthCheckbox" checked onchange="updateBeltLength(this.checked)">
+        </div>
     </div>
     <script>
         var canvas = document.getElementById('myCanvas');
@@ -109,6 +113,7 @@
         var beltAngle = true;
         var armContact = true;
         var beltTension = true;
+        var beltLength = true;
 
         function updateDimensions() {
             var height = document.getElementById('heightInput').value;
@@ -144,6 +149,11 @@
 
         function updateBeltTension(checked) {
             beltTension = checked;
+            draw();
+        }
+
+        function updateBeltLength(checked) {
+            beltLength = checked;
             draw();
         }
 
@@ -258,9 +268,11 @@
                 return 100;
             }
 
-            //The belt can't go any further than 14.5 feet or 4419 mm
-            if (dist > 4419){
-                return 100;
+            if(beltLength){
+                //The belt can't go any further than 14.5 feet or 4419 mm
+                if (dist > 4419){
+                    return 100;
+                }
             }
 
             //Compute the angle over the distance
