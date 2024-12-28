@@ -312,22 +312,23 @@
             const maxAngle = Math.max(topAngle, leftAngle, rightAngle, bottomAngle);
             const minAngle = Math.min(topAngle, leftAngle, rightAngle, bottomAngle);
 
-            //The maximum allowable angle is is 130 degress or 2.26 radians
-            if(maxAngle > 130){
-                console.log("Angle: " + maxAngle);
-                return .004*maxAngle;
+            console.log("Min angle: " + minAngle);
+
+            //The minimum allowable angle is 20 degrees or .35 radians
+            if(minAngle < 20){
+                return 4*(20-minAngle);
             }
             else{
                 return 0;
             }
 
-            //The minimum allowable angle is 20 degrees or .35 radians
-            // if(minAngle < 20){
-            //     return 100;
-            // }
-            // else{
-            //     return 0;
-            // }
+            //The maximum allowable angle is is 130 degress or 2.26 radians
+            if(maxAngle > 130){
+                return .004*maxAngle;
+            }
+            else{
+                return 0;
+            }
         }
 
         var computePositionGradient = function(x, y, tl, tr, bl, br) {
