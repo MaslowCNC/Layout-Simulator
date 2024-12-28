@@ -8,10 +8,40 @@
         canvas {
             border: 1px solid black;
         }
+        .controls {
+            display: inline-block;
+            vertical-align: top;
+            margin-left: 20px;
+        }
+        .controls label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .controls input {
+            display: block;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
     <canvas id="myCanvas" width="1000" height="900"></canvas>
+    <div class="controls">
+        <label for="heightInput">Height:</label>
+        <input type="text" id="heightInput" value="2000" oninput="updateDimensions()">
+        <label for="widthInput">Width:</label>
+        <input type="text" id="widthInput" value="3000" oninput="updateDimensions()">
+        <label for="resolutionSlider">Resolution:</label>
+        <label for="beltAngleCheckbox">Belt Angle:</label>
+        <input type="checkbox" id="beltAngleCheckbox" checked onchange="updateBeltAngle(this.checked)">
+        <br>
+        <label for="armContactCheckbox">Arm Contact:</label>
+        <input type="checkbox" id="armContactCheckbox" checked onchange="updateArmContact(this.checked)">
+        <br>
+        <label for="beltTensionCheckbox">Belt Tension:</label>
+        <input type="checkbox" id="beltTensionCheckbox" checked onchange="updateBeltTension(this.checked)">
+        <br>
+<input type="range" id="resolutionSlider" min="10" max="100" value="20" oninput="updateResolution(this.value)">
+    </div>
     <script>
         var canvas = document.getElementById('myCanvas');
         var tp = canvas.getContext('2d');
@@ -37,6 +67,49 @@
         var panY = 0;
         var isPanning = false;
         var startX, startY;
+
+        var resolution = 20;
+
+        var beltAngle = true;
+        var armContact = true;
+        var beltTension = true;
+
+        function updateDimensions() {
+            var height = document.getElementById('heightInput').value;
+            var width = document.getElementById('widthInput').value;
+            if (height && width) {
+                let h = parseInt(height);
+                let w = parseInt(width);
+
+                h = Math.min(5000, h);
+                w = Math.min(5000, w);
+                tlY = h;
+                trX = w;
+                trY = h;
+                brX = w;
+                draw();
+            }
+        }
+
+        function updateResolution(value) {
+            resolution = value;
+            draw();
+        }
+
+        function updateBeltAngle(checked) {
+            beltAngle = checked;
+            draw();
+        }
+
+        function updateArmContact(checked) {
+            armContact = checked;
+            draw();
+        }
+
+        function updateBeltTension(checked) {
+            beltTension = checked;
+            draw();
+        }
 
         //Shifts 0,0 to be the center of the canvas and scales the points for zooming
         function projection(point) {
@@ -124,7 +197,7 @@
             tp.closePath();
             tp.fill();
 
-            const squareSize = 20* scale;
+            const squareSize = resolution * scale;
 
             //drawARect(tl.x, tl.y, squareSize, computePositionGradient(0, 0, tl, tr, bl, br));
 
@@ -144,7 +217,13 @@
 
             const dist = Math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
 
+            //Hitting the sled
             if (dist < 100){
+                return 100;
+            }
+
+            //The belt can't go any further than 14.5 feet or 4419 mm
+            if (dist > 4419){
                 return 100;
             }
 
@@ -224,15 +303,20 @@
             let blI = inverseProjection(bl);
             let brI = inverseProjection(br);
 
+            if(beltAngle){
+                opacity = opacity + checkMinBeltLength(posI.x, posI.y, tlI.x, tlI.y, tlZ);
+                opacity = opacity + checkMinBeltLength(posI.x, posI.y, trI.x, trI.y, trZ);
+                opacity = opacity + checkMinBeltLength(posI.x, posI.y, blI.x, blI.y, blZ);
+                opacity = opacity + checkMinBeltLength(posI.x, posI.y, brI.x, brI.y, brZ);
+            }
 
-            opacity = opacity + checkMinBeltLength(posI.x, posI.y, tlI.x, tlI.y, tlZ);
-            opacity = opacity + checkMinBeltLength(posI.x, posI.y, trI.x, trI.y, trZ);
-            opacity = opacity + checkMinBeltLength(posI.x, posI.y, blI.x, blI.y, blZ);
-            opacity = opacity + checkMinBeltLength(posI.x, posI.y, brI.x, brI.y, brZ);
+            if(beltTension){
+                opacity = Math.max(opacity, computeTension(posI.x, posI.y, tlI, trI, blI, brI));
+            }
 
-            opacity = Math.max(opacity, computeTension(posI.x, posI.y, tlI, trI, blI, brI));
-
-            opacity = Math.max(opacity, checkAnglesBetweenBelts(posI.x, posI.y, tlI, trI, blI, brI));
+            if(armContact){
+                opacity = Math.max(opacity, checkAnglesBetweenBelts(posI.x, posI.y, tlI, trI, blI, brI));
+            }
 
             return opacity;
         }
@@ -304,7 +388,7 @@
 
         canvas.addEventListener('wheel', function(e) {
             e.preventDefault();
-            var scaleAmount = e.deltaY * -0.01;
+            var scaleAmount = e.deltaY * -0.002;
             scale += scaleAmount;
             scale = Math.min(Math.max(.125, scale), 4);
             draw();
