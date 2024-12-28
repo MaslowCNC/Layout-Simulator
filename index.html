@@ -65,19 +65,19 @@
         <input type="text" id="widthInput" value="3000" oninput="updateDimensions()">
         <label for="resolutionSlider">Resolution:</label>
         <input type="range" id="resolutionSlider" min="10" max="100" value="20" oninput="updateResolution(this.value)">
-        <div class="checkbox-container">
+        <div class="checkbox-container" title="As the sled approaches the anchor point the angle from the machine to the anchor point gets more aggressive which can lead to issues.">
             <label for="beltAngleCheckbox">Belt Angle:</label>
             <input type="checkbox" id="beltAngleCheckbox" checked onchange="updateBeltAngle(this.checked)">
         </div>
-        <div class="checkbox-container">
+        <div class="checkbox-container" title="There is a limit to how far the arms can rotate before they contact the machine which reduces acuracy.">
             <label for="armContactCheckbox">Arm Contact:</label>
             <input type="checkbox" id="armContactCheckbox" checked onchange="updateArmContact(this.checked)">
         </div>
-        <div class="checkbox-container">
+        <div class="checkbox-container" title = "In vertical orientation the tension in the upper belts approaces infintiy as the sled moves directly between them.">
             <label for="beltTensionCheckbox">Belt Tension:</label>
             <input type="checkbox" id="beltTensionCheckbox" checked onchange="updateBeltTension(this.checked)">
         </div>
-        <div class="checkbox-container">
+        <div class="checkbox-container" title="The length of the belt is finite and cannot reach further.">
             <label for="beltLengthCheckbox">Belt Length:</label>
             <input type="checkbox" id="beltLengthCheckbox" checked onchange="updateBeltLength(this.checked)">
         </div>
