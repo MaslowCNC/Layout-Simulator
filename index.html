@@ -5,29 +5,54 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Canvas Drawing</title>
     <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
         canvas {
-            border: 1px solid black;
+            border: 1px solid #ccc;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
         .controls {
             display: inline-block;
             vertical-align: top;
             margin-left: 20px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
         .controls label {
             display: block;
             margin-bottom: 5px;
+            font-weight: bold;
         }
-        .controls input {
+        .controls input[type="text"],
+        .controls input[type="range"] {
             display: block;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
         }
-            .checkbox-container {
+        .checkbox-container {
             display: flex;
             align-items: center;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
         }
         .checkbox-container label {
             margin-right: 10px;
+            font-weight: normal;
+        }
+        .checkbox-container input[type="checkbox"] {
+            transform: scale(1.2);
         }
     </style>
 </head>
@@ -39,6 +64,7 @@
         <label for="widthInput">Width:</label>
         <input type="text" id="widthInput" value="3000" oninput="updateDimensions()">
         <label for="resolutionSlider">Resolution:</label>
+        <input type="range" id="resolutionSlider" min="10" max="100" value="20" oninput="updateResolution(this.value)">
         <div class="checkbox-container">
             <label for="beltAngleCheckbox">Belt Angle:</label>
             <input type="checkbox" id="beltAngleCheckbox" checked onchange="updateBeltAngle(this.checked)">
@@ -51,7 +77,6 @@
             <label for="beltTensionCheckbox">Belt Tension:</label>
             <input type="checkbox" id="beltTensionCheckbox" checked onchange="updateBeltTension(this.checked)">
         </div>
-<input type="range" id="resolutionSlider" min="10" max="100" value="20" oninput="updateResolution(this.value)">
     </div>
     <script>
         var canvas = document.getElementById('myCanvas');
