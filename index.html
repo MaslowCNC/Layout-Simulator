@@ -27,6 +27,11 @@
         var brX = 3000;
         var brY = 0;
 
+        var tlZ = 100;
+        var trZ = 56;
+        var blZ = 34;
+        var brZ = 78;
+
         var scale = .25;
         var panX = 0;
         var panY = 0;
@@ -106,20 +111,20 @@
             tp.arc(tl.x, tl.y, 10, 0, 2 * Math.PI);
             tp.closePath();
             tp.fill();
-            // tp.beginPath();
-            // tp.arc(tr.x, tr.y, 10, 0, 2 * Math.PI);
-            // tp.closePath();
-            // tp.fill();
-            // tp.beginPath();
-            // tp.arc(br.x, br.y, 10, 0, 2 * Math.PI);
-            // tp.closePath();
-            // tp.fill();
-            // tp.beginPath();
-            // tp.arc(bl.x, bl.y, 10, 0, 2 * Math.PI);
-            // tp.closePath();
-            // tp.fill();
+            tp.beginPath();
+            tp.arc(tr.x, tr.y, 10, 0, 2 * Math.PI);
+            tp.closePath();
+            tp.fill();
+            tp.beginPath();
+            tp.arc(br.x, br.y, 10, 0, 2 * Math.PI);
+            tp.closePath();
+            tp.fill();
+            tp.beginPath();
+            tp.arc(bl.x, bl.y, 10, 0, 2 * Math.PI);
+            tp.closePath();
+            tp.fill();
 
-            const squareSize = 50* scale;
+            const squareSize = 20* scale;
 
             //drawARect(tl.x, tl.y, squareSize, computePositionGradient(0, 0, tl, tr, bl, br));
 
@@ -135,15 +140,79 @@
             }
         }
 
-        var checkMinBeltLength = function(x1, y1, x2, y2) {
+        var checkMinBeltLength = function(x1, y1, x2, y2, height) {
 
             const dist = Math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
 
-            if (dist < 1200) {
-                return 1 - dist / 1200;
+            if (dist < 100){
+                return 100;
+            }
+
+            //Compute the angle over the distance
+            const angle = Math.asin(height / dist);
+
+            if (angle > .1) {
+                return 5*angle;
             } else {
                 return 0;
             }
+        }
+
+        var checkAnglesBetweenBelts = function(x, y, tl, tr, bl, br) {
+
+            //The dist between tl and tr
+            const a = Math.sqrt((tl.x - tr.x) * (tl.x - tr.x) + (tl.y - tr.y) * (tl.y - tr.y));
+            //The dist between tl and x,y
+            const b = Math.sqrt((tl.x - x) * (tl.x - x) + (tl.y - y) * (tl.y - y));
+            //The dist between tr and x,y
+            const c = Math.sqrt((tr.x - x) * (tr.x - x) + (tr.y - y) * (tr.y - y));
+
+            //Angle between x,y to tl and x,y to tr -- Calculate the angle opposite to side a
+            const topAngle = Math.acos((b*b + c*c - a*a) / (2 * b * c)) * (180 / Math.PI);
+
+            //Repeat for the left side
+            const d = Math.sqrt((tl.x - bl.x) * (tl.x - bl.x) + (tl.y - bl.y) * (tl.y - bl.y));
+            const e = Math.sqrt((tl.x - x) * (tl.x - x) + (tl.y - y) * (tl.y - y));
+            const f = Math.sqrt((bl.x - x) * (bl.x - x) + (bl.y - y) * (bl.y - y));
+
+            const leftAngle = Math.acos((e*e + f*f - d*d) / (2 * e * f)) * (180 / Math.PI);
+
+            //Repeat for the right side
+            const g = Math.sqrt((tr.x - br.x) * (tr.x - br.x) + (tr.y - br.y) * (tr.y - br.y));
+            const h = Math.sqrt((tr.x - x) * (tr.x - x) + (tr.y - y) * (tr.y - y));
+            const i = Math.sqrt((br.x - x) * (br.x - x) + (br.y - y) * (br.y - y));
+
+            const rightAngle = Math.acos((h*h + i*i - g*g) / (2 * h * i)) * (180 / Math.PI);
+
+            //And the bottom
+            const j = Math.sqrt((bl.x - br.x) * (bl.x - br.x) + (bl.y - br.y) * (bl.y - br.y));
+            const k = Math.sqrt((bl.x - x) * (bl.x - x) + (bl.y - y) * (bl.y - y));
+            const l = Math.sqrt((br.x - x) * (br.x - x) + (br.y - y) * (br.y - y));
+
+            const bottomAngle = Math.acos((k*k + l*l - j*j) / (2 * k * l)) * (180 / Math.PI);
+
+            console.log("Left Angle: " + leftAngle);
+
+
+            const maxAngle = Math.max(topAngle, leftAngle, rightAngle, bottomAngle);
+            const minAngle = Math.min(topAngle, leftAngle, rightAngle, bottomAngle);
+
+            //The maximum allowable angle is is 130 degress or 2.26 radians
+            if(maxAngle > 130){
+                console.log("Angle: " + maxAngle);
+                return .004*maxAngle;
+            }
+            else{
+                return 0;
+            }
+
+            //The minimum allowable angle is 20 degrees or .35 radians
+            // if(minAngle < 20){
+            //     return 100;
+            // }
+            // else{
+            //     return 0;
+            // }
         }
 
         var computePositionGradient = function(x, y, tl, tr, bl, br) {
@@ -156,12 +225,14 @@
             let brI = inverseProjection(br);
 
 
-            opacity = opacity + checkMinBeltLength(posI.x, posI.y, tlI.x, tlI.y);
-            opacity = opacity + checkMinBeltLength(posI.x, posI.y, trI.x, trI.y);
-            opacity = opacity + checkMinBeltLength(posI.x, posI.y, blI.x, blI.y);
-            opacity = opacity + checkMinBeltLength(posI.x, posI.y, brI.x, brI.y);
+            opacity = opacity + checkMinBeltLength(posI.x, posI.y, tlI.x, tlI.y, tlZ);
+            opacity = opacity + checkMinBeltLength(posI.x, posI.y, trI.x, trI.y, trZ);
+            opacity = opacity + checkMinBeltLength(posI.x, posI.y, blI.x, blI.y, blZ);
+            opacity = opacity + checkMinBeltLength(posI.x, posI.y, brI.x, brI.y, brZ);
 
             opacity = Math.max(opacity, computeTension(posI.x, posI.y, tlI, trI, blI, brI));
+
+            opacity = Math.max(opacity, checkAnglesBetweenBelts(posI.x, posI.y, tlI, trI, blI, brI));
 
             return opacity;
         }
@@ -186,6 +257,7 @@
             }
         }
 
+
         // License: MIT - https://opensource.org/licenses/MIT
         // Author: Michele Locati <michele@locati.it>
         // Source: https://gist.github.com/mlocati/7210513
@@ -206,7 +278,6 @@
         }
 
         var drawARect = function(x, y, size, opacity) {
-            console.log("Drawing a rect at X: " + x + " Y: " + y + " with opacity: " + opacity);
             tp.beginPath();
             tp.fillStyle = perc2color(100 - 100 * opacity);
             tp.rect(x - size / 2, y - size / 2, size, size); // Invert y-coordinate
