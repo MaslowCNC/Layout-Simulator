@@ -70,6 +70,7 @@
         <input type="text" id="widthInput" value="4000" oninput="updateDimensions()">
         <label for="resolutionSlider">Resolution:</label>
         <input type="range" id="resolutionSlider" min="10" max="100" value="20" oninput="updateResolution(this.value)">
+        
         <div class="checkbox-container" title="As the sled approaches the anchor point the angle from the machine to the anchor point gets more aggressive which can lead to issues.">
             <label for="beltAngleCheckbox">Belt Angle:</label>
             <input type="checkbox" id="beltAngleCheckbox" checked onchange="updateBeltAngle(this.checked)">
@@ -86,6 +87,11 @@
             <label for="beltLengthCheckbox">Belt Length:</label>
             <input type="checkbox" id="beltLengthCheckbox" checked onchange="updateBeltLength(this.checked)">
         </div>
+
+        <label for="workAreaWidthInput">Work Area Width:</label>
+        <input type="text" id="workAreaWidthInput" value="2438" oninput="updateWorkAreaDimensions()">
+        <label for="workAreaHeightInput">Work Area Height:</label>
+        <input type="text" id="workAreaHeightInput" value="1219" oninput="updateWorkAreaDimensions()">
     </div>
     <script>
         var canvas = document.getElementById('myCanvas');
@@ -120,6 +126,9 @@
         var beltTension = true;
         var beltLength = true;
 
+        var woodWidth = 2438;
+        var woodHeight = 2438 / 2;
+
         function updateDimensions() {
             var height = document.getElementById('heightInput').value;
             var width = document.getElementById('widthInput').value;
@@ -133,6 +142,18 @@
                 trX = w;
                 trY = h;
                 brX = w;
+                draw();
+            }
+        }
+
+        function updateWorkAreaDimensions() {
+            console.log("Updating work area dimensions");
+            var height = document.getElementById('workAreaHeightInput').value;
+            var width = document.getElementById('workAreaWidthInput').value;
+            if (height && width) {
+                console.log("Width and height are defined");
+                woodHeight = parseInt(height);
+                woodWidth = parseInt(width);
                 draw();
             }
         }
@@ -179,8 +200,6 @@
         }
 
         var drawMachineBounds = function() {
-            var woodWidth = 2438;
-            var woodHeight = 2438 / 2;
 
             const p0 = projection({ x: -woodWidth / 2, y: -woodHeight / 2, z: 0 });
             const p1 = projection({ x: woodWidth / 2, y: -woodHeight / 2, z: 0 });
@@ -355,8 +374,6 @@
 
             //The minimum allowable angle between opposite arms is 130 degrees or 2.26 radians
             if(minOpposite < 130){
-                console.log("trbl: " + trbl);
-                console.log("tlbr: " + tlbr);
                 minOppositeVal = .009*(130-minAngle);
             }
 
