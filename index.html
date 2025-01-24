@@ -65,9 +65,9 @@
             You can turn on and off different criteria for color coding or hover over each option for a description of what it is.
         </p>
         <label for="heightInput">Height:</label>
-        <input type="text" id="heightInput" value="2000" oninput="updateDimensions()">
+        <input type="text" id="heightInput" value="3300" oninput="updateDimensions()">
         <label for="widthInput">Width:</label>
-        <input type="text" id="widthInput" value="3000" oninput="updateDimensions()">
+        <input type="text" id="widthInput" value="4000" oninput="updateDimensions()">
         <label for="resolutionSlider">Resolution:</label>
         <input type="range" id="resolutionSlider" min="10" max="100" value="20" oninput="updateResolution(this.value)">
         <div class="checkbox-container" title="As the sled approaches the anchor point the angle from the machine to the anchor point gets more aggressive which can lead to issues.">
@@ -94,12 +94,12 @@
         var bboxIsSet = false;
 
         var tlX = 0;
-        var tlY = 2000;
-        var trX = 3000; 
-        var trY = 2000;
+        var tlY = 3300;
+        var trX = 4000; 
+        var trY = 3300;
         var blX = 0;
         var blY = 0;
-        var brX = 3000;
+        var brX = 4000;
         var brY = 0;
 
         var tlZ = 100;
@@ -323,26 +323,54 @@
 
             const bottomAngle = Math.acos((k*k + l*l - j*j) / (2 * k * l)) * (180 / Math.PI);
 
-            console.log("Left Angle: " + leftAngle);
+            // Now we need to compute the minimum angle for the opposite sides. This can't be less than 130 degrees
 
+            // Angle between x,y to tl and x,y to br
+            const vector1 = { x: tl.x - x, y: tl.y - y };
+            const vector2 = { x: br.x - x, y: br.y - y };
+
+            const dotProduct = vector1.x * vector2.x + vector1.y * vector2.y;
+            const magnitude1 = Math.sqrt(vector1.x * vector1.x + vector1.y * vector1.y);
+            const magnitude2 = Math.sqrt(vector2.x * vector2.x + vector2.y * vector2.y);
+
+            const tlbr = Math.acos(dotProduct / (magnitude1 * magnitude2)) * (180 / Math.PI);
+
+            // Angle between x,y to tr and x,y to bl
+            const vector3 = { x: tr.x - x, y: tr.y - y };
+            const vector4 = { x: bl.x - x, y: bl.y - y };
+
+            const dotProduct2 = vector3.x * vector4.x + vector3.y * vector4.y;
+            const magnitude3 = Math.sqrt(vector3.x * vector3.x + vector3.y * vector3.y);
+            const magnitude4 = Math.sqrt(vector4.x * vector4.x + vector4.y * vector4.y);
+
+            const trbl = Math.acos(dotProduct2 / (magnitude3 * magnitude4)) * (180 / Math.PI);
 
             const maxAngle = Math.max(topAngle, leftAngle, rightAngle, bottomAngle);
             const minAngle = Math.min(topAngle, leftAngle, rightAngle, bottomAngle);
+            const minOpposite = Math.min(tlbr, trbl);
 
-            console.log("Min angle: " + minAngle);
+            let minAngleVal    = 0;
+            let maxAngleVal    = 0;
+            let minOppositeVal = 0;
 
-            //The minimum allowable angle is 20 degrees or .35 radians
+            //The minimum allowable angle between opposite arms is 130 degrees or 2.26 radians
+            if(minOpposite < 130){
+                console.log("trbl: " + trbl);
+                console.log("tlbr: " + tlbr);
+                minOppositeVal = .009*(130-minAngle);
+            }
+
+            //The minimum allowable angle is 20 degrees or .35 radians between adjacent arms
             if(minAngle < 20){
-                return 4*(20-minAngle);
+                minAngleVal =  4*(20-minAngle);
             }
 
-            //The maximum allowable angle is is 130 degress or 2.26 radians
+            //The maximum allowable angle between adjacent arms is is 130 degress or 2.26 radians
             if(maxAngle > 130){
-                return .004*maxAngle;
+                maxAngleVal =  .004*maxAngle;
             }
-            else{
-                return 0;
-            }
+            
+            return Math.max(minAngleVal, maxAngleVal, minOppositeVal);
         }
 
         var computePositionGradient = function(x, y, tl, tr, bl, br) {
